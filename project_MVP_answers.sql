@@ -24,6 +24,7 @@ USING(npi)
 GROUP BY npi
 ORDER BY t DESC
 LIMIT 1;
+
 	--     b. Repeat the above, but this time report the nppes_provider_first_name, nppes_provider_last_org_name,  specialty_description, and the total number of claims.
 
 		SELECT
@@ -204,8 +205,9 @@ HAVING SUM(total_claim_count) >= 3000;
 -- b. For each instance that you found in part a, add a column that indicates whether the drug is an opioid.
 SELECT p.drug_name, SUM(p.total_claim_count) as total_claim_count,
        CASE WHEN d.opioid_drug_flag = 'Y' THEN 'Yes' ELSE 'No' END AS is_opioid
-FROM prescription p
-JOIN drug d ON p.drug_name = d.drug_name
+FROM prescription AS p
+JOIN drug d 
+ON p.drug_name = d.drug_name
 GROUP BY p.drug_name, d.opioid_drug_flag
 HAVING SUM(p.total_claim_count) >= 3000;
 
@@ -213,7 +215,7 @@ HAVING SUM(p.total_claim_count) >= 3000;
 SELECT p.drug_name, SUM(p.total_claim_count) as total_claim_count,
        CASE WHEN d.opioid_drug_flag = 'Y' THEN 'Yes' ELSE 'No' END AS is_opioid,
        pr.nppes_provider_first_name, pr.nppes_provider_last_name
-FROM prescription p
+FROM prescription AS p
 JOIN drug d ON p.drug_name = d.drug_name
 JOIN prescriber pr ON p.npi = pr.npi
 GROUP BY p.drug_name, d.opioid_drug_flag, pr.nppes_provider_first_name, pr.nppes_provider_last_name
@@ -224,15 +226,17 @@ HAVING SUM(p.total_claim_count) >= 3000;
 -- a. First, create a list of all npi/drug_name combinations for pain management specialists in Nashville, where the drug is an opioid.
 SELECT p.npi, d.drug_name
 FROM prescriber p
-JOIN drug d ON p.npi = d.npi -- Assuming a common column like npi exists in 'drug' table. If the connection is via drug_name, adjust it.
+JOIN drug AS d 
+ON p.npi = d.npi -- Assuming a common column like npi exists in 'drug' table. If the connection is via drug_name, adjust it.
 WHERE p.specialty_description = 'Pain Management'
   AND p.nppes_provider_city = 'NASHVILLE'
   AND d.opioid_drug_flag = 'Y';
 
 -- b. Next, report the number of claims per drug per prescriber.
 SELECT p.npi, d.drug_name, COUNT(pr.total_claim_count) as total_claim_count
-FROM prescriber p
-JOIN drug d ON p.npi = d.npi -- Assuming a common column like npi exists in 'drug' table. If the connection is via drug_name, adjust it.
+FROM prescriber AS p
+JOIN drug AS d 
+ON p.npi = d.npi -- Assuming a common column like npi exists in 'drug' table. If the connection is via drug_name, adjust it.
 LEFT JOIN prescription pr ON p.npi = pr.npi AND d.drug_name = pr.drug_name
 WHERE p.specialty_description = 'Pain Management'
   AND p.nppes_provider_city = 'NASHVILLE'
@@ -241,8 +245,9 @@ GROUP BY p.npi, d.drug_name;
 
 -- c. Finally, if you have not done so already, fill in any missing values for total_claim_count with 0.
 SELECT p.npi, d.drug_name, COALESCE(SUM(pr.total_claim_count), 0) AS total_claim_count
-FROM prescriber p
-JOIN drug d ON p.npi = d.npi -- Assuming a common column like npi exists in 'drug' table. If the connection is via drug_name, adjust it.
+FROM prescriber AS p
+JOIN drug AS d 
+ON p.npi = d.npi -- Assuming a common column like npi exists in 'drug' table. If the connection is via drug_name, adjust it.
 LEFT JOIN prescription pr ON p.npi = pr.npi AND d.drug_name = pr.drug_name
 WHERE p.specialty_description = 'Pain Management'
   AND p.nppes_provider_city = 'NASHVILLE'

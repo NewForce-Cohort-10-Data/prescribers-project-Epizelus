@@ -1,26 +1,26 @@
 -- 1. Total claims for two specialties
 SELECT specialty_description, SUM(total_claim_count) AS total_claims
-FROM prescriber p
+FROM prescriber AS p
 JOIN prescription pr ON p.npi = pr.npi
 WHERE specialty_description IN ('Interventional Pain Management', 'Pain Management')
 GROUP BY specialty_description;
 
 -- 2. UNION to include the overall total
 SELECT specialty_description, SUM(total_claim_count) AS total_claims
-FROM prescriber p
+FROM prescriber AS p
 JOIN prescription pr ON p.npi = pr.npi
 WHERE specialty_description IN ('Interventional Pain Management', 'Pain Management')
 GROUP BY specialty_description
 UNION
 SELECT NULL AS specialty_description, SUM(total_claim_count) AS total_claims
-FROM prescriber p
+FROM prescriber AS p
 JOIN prescription pr ON p.npi = pr.npi
 WHERE specialty_description IN ('Interventional Pain Management', 'Pain Management');
 
 
 -- 3. Now, instead of using UNION, make use of GROUPING SETS (https://www.postgresql.org/docs/10/queries-table-expressions.html#QUERIES-GROUPING-SETS) to achieve the same output.
 SELECT specialty_description, SUM(total_claim_count) AS total_claims
-FROM prescriber p
+FROM prescriber AS p
 JOIN prescription pr ON p.npi = pr.npi
 WHERE specialty_description IN ('Interventional Pain Management', 'Pain Management')
 GROUP BY GROUPING SETS((specialty_description), ());
@@ -35,8 +35,9 @@ GROUP BY GROUPING SETS((p.specialty_description, d.opioid_drug_flag), (p.special
 
 -- 5.Modify your query by replacing the GROUPING SETS with ROLLUP(opioid_drug_flag, specialty_description). How is the result different from the output from the previous query?
 SELECT p.specialty_description, d.opioid_drug_flag, SUM(pr.total_claim_count) AS total_claims
-FROM prescriber p
-JOIN prescription pr ON p.npi = pr.npi
+FROM prescriber AS p
+JOIN prescription AS pr 
+ON p.npi = pr.npi
 JOIN drug d ON pr.drug_name = d.drug_name
 WHERE p.specialty_description IN ('Interventional Pain Management', 'Pain Management')
 GROUP BY ROLLUP(d.opioid_drug_flag, p.specialty_description);
@@ -44,8 +45,9 @@ GROUP BY ROLLUP(d.opioid_drug_flag, p.specialty_description);
 
 -- 6. Switch the order of the variables inside the ROLLUP. That is, use ROLLUP(specialty_description, opioid_drug_flag). 
 SELECT p.specialty_description, d.opioid_drug_flag, SUM(pr.total_claim_count) AS total_claims
-FROM prescriber p
-JOIN prescription pr ON p.npi = pr.npi
+FROM prescriber AS p
+JOIN prescription AS pr 
+ON p.npi = pr.npi
 JOIN drug d ON pr.drug_name = d.drug_name
 WHERE p.specialty_description IN ('Interventional Pain Management', 'Pain Management')
 GROUP BY ROLLUP(p.specialty_description, d.opioid_drug_flag);
@@ -53,8 +55,9 @@ GROUP BY ROLLUP(p.specialty_description, d.opioid_drug_flag);
 
 -- 7. Finally, change your query to use the CUBE function instead of ROLLUP. How does this impact the output?
 SELECT p.specialty_description, d.opioid_drug_flag, SUM(pr.total_claim_count) AS total_claims
-FROM prescriber p
-JOIN prescription pr ON p.npi = pr.npi
+FROM prescriber AS p
+JOIN prescription AS pr 
+ON p.npi = pr.npi
 JOIN drug d ON pr.drug_name = d.drug_name
 WHERE p.specialty_description IN ('Interventional Pain Management', 'Pain Management')
 GROUP BY CUBE(p.specialty_description, d.opioid_drug_flag);
